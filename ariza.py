@@ -1,13 +1,16 @@
 import logging
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ConversationHandler, filters, ContextTypes
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, MessageHandler, ConversationHandler,
+    CallbackQueryHandler, ContextTypes, filters
+)
 import openpyxl
 import os
 
 # --- Sozlamalar ---
 FILE_NAME = "nomzodlar.xlsx"
-ADMIN_LINK = "https://t.me/famejon"   # <-- bu yerda o'zingizning Telegram username havolangizni yozing
-SITE_LINK = "https://quvasoyim.pythonanywhere.com/vote"  # <-- bu yerda o'z saytingiz havolasini yozing
+ADMIN_LINK = "https://t.me/famejon"
+SITE_LINK = "https://quvasoyim.pythonanywhere.com/vote"
 
 # Fayl mavjud bo‘lmasa, yangisini yaratamiz
 if not os.path.exists(FILE_NAME):
@@ -17,7 +20,7 @@ if not os.path.exists(FILE_NAME):
     wb.save(FILE_NAME)
 
 # Logger
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 # Holatlar
 NAME, CLASS, DIRECTION, GOAL1, GOAL2, GOAL3 = range(6)
@@ -50,7 +53,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return NAME
 
-# --- Yordam tugmasi ---
+# --- Yordam ---
 async def help_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"🧑‍💻 Agar sizda muammo bo‘lsa, shu havola orqali bog‘laning:\n👉 {ADMIN_LINK}"
@@ -117,7 +120,7 @@ async def get_goal3(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ])
     wb.save(FILE_NAME)
 
-    # ✅ Tugmalar: yana qo‘shish va saytda ovoz berish
+    # Tugmalar
     buttons = [
         [InlineKeyboardButton("🔁 Yana nomzod qo‘shish", callback_data="restart")],
         [InlineKeyboardButton("🌐 Ovoz berish", web_app=WebAppInfo(url=SITE_LINK))]
@@ -128,7 +131,6 @@ async def get_goal3(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "✅ Ma'lumotlaringiz saqlandi!\nQuyidagilardan birini tanlang:",
         reply_markup=reply_markup
     )
-
     return ConversationHandler.END
 
 # --- Inline tugma hodisalari ---
@@ -143,8 +145,9 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Bekor qilindi. /start buyrug‘i bilan qayta boshlashingiz mumkin.")
     return ConversationHandler.END
 
+# --- Asosiy funksiya ---
 def main():
-    TOKEN = "8320383161:AAEElu2v9RAvWQE7Rj81atNvbfEdcpYlR8w"  # <-- bu yerga tokenni yoz
+    TOKEN = "8320383161:AAEElu2v9RAvWQE7Rj81atNvbfEdcpYlR8w"
     app = ApplicationBuilder().token(TOKEN).build()
 
     conv_handler = ConversationHandler(
@@ -161,49 +164,10 @@ def main():
     )
 
     app.add_handler(conv_handler)
-    app.add_handler(MessageHandler(filters.COMMAND, cancel))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, help_button))
-    app.add_handler(MessageHandler(filters.ALL, help_button))
-    app.add_handler(MessageHandler(filters.StatusUpdate, help_button))
-    app.add_handler(MessageHandler(filters.TEXT, help_button))
-    app.add_handler(MessageHandler(filters.Regex("🆘 Yordam"), help_button))
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("🆘 Yordam"), help_button))
-
-    # Inline tugma handler
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("Yana nomzod qo‘shish"), start))
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("Ovoz berish"), help_button))
-    app.add_handler(MessageHandler(filters.COMMAND, cancel))
-
-    app.add_handler(MessageHandler(filters.StatusUpdate, help_button))
-    app.add_handler(MessageHandler(filters.ALL, help_button))
-
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, help_button))
-    app.add_handler(MessageHandler(filters.Regex("🆘 Yordam"), help_button))
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("🆘 Yordam"), help_button))
-    app.add_handler(MessageHandler(filters.COMMAND, cancel))
-
-    app.add_handler(MessageHandler(filters.ALL, help_button))
-    app.add_handler(MessageHandler(filters.StatusUpdate, help_button))
-    app.add_handler(MessageHandler(filters.Regex("Yana nomzod qo‘shish"), start))
-    app.add_handler(MessageHandler(filters.Regex("Ovoz berish"), help_button))
-
-    app.add_handler(MessageHandler(filters.ALL, help_button))
-    app.add_handler(MessageHandler(filters.TEXT, help_button))
-
-    # Inline callback tugmalar
-    app.add_handler(MessageHandler(filters.ALL, help_button))
-    app.add_handler(MessageHandler(filters.Regex("Yana nomzod qo‘shish"), start))
-
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("Ovoz berish"), help_button))
-    app.add_handler(MessageHandler(filters.Regex("🆘 Yordam"), help_button))
-    app.add_handler(MessageHandler(filters.COMMAND, cancel))
-    app.add_handler(MessageHandler(filters.TEXT, help_button))
-
-    # Callback query handler
-    from telegram.ext import CallbackQueryHandler
     app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(MessageHandler(filters.Regex("🆘 Yordam"), help_button))
 
-    print("Bot ishga tushdi...")
+    print("Bot ishga tushdi 🚀")
     app.run_polling()
 
 if __name__ == "__main__":
